@@ -24,7 +24,9 @@ def main() -> None:
 
     player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 
-    rand_pos = RandPos()
+    rand_pos = RandPos(player_pos)
+
+    pygame.key.set_repeat(500, 100) 
 
     chain = []
 
@@ -35,23 +37,22 @@ def main() -> None:
                 running = False
 
             if event.type == COLLISION:
-                rand_pos = RandPos()
+                rand_pos = RandPos(player_pos)
+
                 if len(chain) == 0:
                     chain.append(pygame.Vector2(player_pos.x , player_pos.y + 20))
+
                 else:
-                    
                     chain.append(pygame.Vector2(chain[len(chain) - 1 ].x, chain[len(chain) - 1 ].y + 20))
                     print(chain)
 
-
-        # fill the screen with a color to wipe away anything from last frame
         screen.fill("black")
 
         pygame.draw.circle(screen, "blue", rand_pos, DEFAULT_CIRCLE_RADIUS)
         pygame.draw.circle(screen, "red", player_pos, DEFAULT_CIRCLE_RADIUS)
         
-        for vec in chain :
-            pygame.draw.circle(screen, "red", vec, DEFAULT_CIRCLE_RADIUS)
+        #this moves one snake body node each frame
+        moveBody(chain)
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
@@ -61,6 +62,7 @@ def main() -> None:
             if len(chain) != 0:
                 chain[0].y = player_pos.y + 20
                 chain[0].x = player_pos.x 
+
         if keys[pygame.K_s]:
 
             player_pos.y += MOVEMENT_SPEED * dt
@@ -95,12 +97,18 @@ def main() -> None:
     pygame.quit()
 
 
-def RandPos() -> pygame.Vector2:
+def RandPos(player_pos : pygame.Vector2 ) -> pygame.Vector2:
+    #produce X,Y coordinates until the coordinates are valid
+    #valid coordinates are coordinates that do not match the snake head node
+    invalidCoordinates = True
+    while invalidCoordinates:
 
-    pos_x = random.uniform(screen.get_width(), 0) 
-    pos_y = random.uniform(0, screen.get_height())
+        pos_x = random.uniform(screen.get_width(), 0) 
+        pos_y = random.uniform(0, screen.get_height())
 
-    return pygame.Vector2(pos_x, pos_y)
+        if pygame.Vector2(pos_x, pos_y) != player_pos :
+            invalidCoordinates = False
+            return pygame.Vector2(pos_x, pos_y)
 
 def detectCircleCollision(rand_pos : pygame.Vector2, player_pos: pygame.Vector2) -> None:
     # distance between two coordinates on the grid
@@ -108,8 +116,17 @@ def detectCircleCollision(rand_pos : pygame.Vector2, player_pos: pygame.Vector2)
 
     distance = math.sqrt(inner)
 
-    if distance < DEFAULT_CIRCLE_RADIUS * 2:
+    if distance <= DEFAULT_CIRCLE_RADIUS * 2:
         pygame.event.post(pygame.event.Event(COLLISION)) 
 
+
+def moveBody(chain) -> None:
+    for vec in chain :
+        pygame.draw.circle(screen, "red", vec, DEFAULT_CIRCLE_RADIUS)
+
+def gameCounter(chain) -> None:
+    #keeps track of how much snake food has been eaten 
+    #and increases movement speed with each bite taken
+    pass
 
 main()
