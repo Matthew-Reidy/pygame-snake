@@ -1,18 +1,21 @@
-# Example file showing a circle moving on screen
 import pygame
 import random
 import math
 # pygame setup
 pygame.init()
 
+
 screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 
 pygame.display.set_caption('Snake') 
 
+
 dt = 0
 
 COLLISION = pygame.USEREVENT + 1
+
+GAME_OUTCOME = pygame.USEREVENT + 2
 
 DEFAULT_CIRCLE_RADIUS = 10
 
@@ -23,14 +26,18 @@ def main() -> None:
     running = True
 
     player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+    
+    myfont = pygame.font.SysFont("Arial", 25)
 
     rand_pos = RandPos(player_pos)
-
-    pygame.key.set_repeat(500, 100) 
 
     chain = []
 
     while running:
+        
+        screen.fill("black")
+
+        gameCounter(chain, myfont)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -45,23 +52,20 @@ def main() -> None:
                 else:
                     chain.append(pygame.Vector2(chain[len(chain) - 1 ].x, chain[len(chain) - 1 ].y + 20))
                     print(chain)
+            if event.type == GAME_OUTCOME:
+                running = False
 
-        screen.fill("black")
-
+        #food node
         pygame.draw.circle(screen, "blue", rand_pos, DEFAULT_CIRCLE_RADIUS)
+        #body head node
         pygame.draw.circle(screen, "red", player_pos, DEFAULT_CIRCLE_RADIUS)
         
-        #this moves one snake body node each frame
         moveBody(chain)
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
 
             player_pos.y -= MOVEMENT_SPEED * dt
-
-            if len(chain) != 0:
-                chain[0].y = player_pos.y + 20
-                chain[0].x = player_pos.x 
 
         if keys[pygame.K_s]:
 
@@ -71,26 +75,14 @@ def main() -> None:
 
             player_pos.x -= MOVEMENT_SPEED * dt
 
-            if len(chain) != 0:
-                chain[0].y = player_pos.y 
-                chain[0].x = player_pos.x + 20
-
         if keys[pygame.K_d]:
 
             player_pos.x += MOVEMENT_SPEED * dt
 
-            if len(chain) != 0:
-                chain[0].y = player_pos.y 
-                chain[0].x = player_pos.x - 20
-
         detectCircleCollision(rand_pos, player_pos)
-
-        # flip() the display to put your work on screen
+        
         pygame.display.flip()
 
-        # limits FPS to 60
-        # dt is delta time in seconds since last frame, used for framerate-
-        # independent physics.
         dt = clock.tick(60) / 1000
 
 
@@ -98,6 +90,7 @@ def main() -> None:
 
 
 def RandPos(player_pos : pygame.Vector2 ) -> pygame.Vector2:
+
     #produce X,Y coordinates until the coordinates are valid
     #valid coordinates are coordinates that do not match the snake head node
     invalidCoordinates = True
@@ -111,6 +104,7 @@ def RandPos(player_pos : pygame.Vector2 ) -> pygame.Vector2:
             return pygame.Vector2(pos_x, pos_y)
 
 def detectCircleCollision(rand_pos : pygame.Vector2, player_pos: pygame.Vector2) -> None:
+
     # distance between two coordinates on the grid
     inner = (rand_pos.x - player_pos.x)**2 + (rand_pos.y - player_pos.y)**2
 
@@ -121,12 +115,15 @@ def detectCircleCollision(rand_pos : pygame.Vector2, player_pos: pygame.Vector2)
 
 
 def moveBody(chain) -> None:
-    for vec in chain :
-        pygame.draw.circle(screen, "red", vec, DEFAULT_CIRCLE_RADIUS)
+    for vector in range(len(chain)):
+        pygame.draw.circle(screen, "red", chain[vector], DEFAULT_CIRCLE_RADIUS)
+    
 
-def gameCounter(chain) -> None:
-    #keeps track of how much snake food has been eaten 
-    #and increases movement speed with each bite taken
-    pass
+def gameCounter(chain, font) -> None:
+
+    score = len(chain) 
+    label = font.render(f"Current score : {score}", 1, (255,255,225))
+    screen.blit(label, (50,50))
+    
 
 main()
