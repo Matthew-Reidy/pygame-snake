@@ -11,15 +11,13 @@ clock = pygame.time.Clock()
 pygame.display.set_caption('Snake') 
 
 
-dt = 0
-
 COLLISION = pygame.USEREVENT + 1
 
 GAME_OUTCOME = pygame.USEREVENT + 2
 
 DEFAULT_CIRCLE_RADIUS = 10
 
-MOVEMENT_SPEED = 1
+movement_speed = 3
 
 def main() -> None:
 
@@ -27,6 +25,8 @@ def main() -> None:
 
     player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
     
+    player_prev_pos = pygame.Vector2(player_pos)
+
     myfont = pygame.font.SysFont("Arial", 25)
 
     rand_pos = RandPos(player_pos)
@@ -47,19 +47,29 @@ def main() -> None:
                 running = False
 
             if event.type == COLLISION:
+
                 rand_pos = RandPos(player_pos)
 
                 if len(chain) == 0:
-                    chain.append(pygame.Vector2(player_pos.x , player_pos.y + 20))
-
+                    # First body segment starts at the player's previous position
+                    chain.append({
+                        "current_position": pygame.Vector2(player_prev_pos),
+                        "previous_position": pygame.Vector2(player_prev_pos)
+                    })
                 else:
-                    chain.append(pygame.Vector2(chain[len(chain) - 1 ].x, chain[len(chain) - 1 ].y + 20))
+                    # Additional segments follow the last segment's previous position
+                    last_segment = chain[-1]
+                    chain.append({
+                        "current_position": pygame.Vector2(last_segment["previous_position"]),
+                        "previous_position": pygame.Vector2(last_segment["previous_position"])
+                    })
 
             if event.type == GAME_OUTCOME:
                 running = False
 
             if event.type == pygame.KEYDOWN:
-                movement_direction = event.key
+                if event.key in [pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d]:
+                    movement_direction = event.key
                
 
 
@@ -68,30 +78,31 @@ def main() -> None:
         #body head node
         pygame.draw.circle(screen, "red", player_pos, DEFAULT_CIRCLE_RADIUS)
         
-        moveBody(chain)
+        moveBody(chain, player_prev_pos)
 
-    
         if movement_direction == pygame.K_w:
 
-            player_pos.y -= MOVEMENT_SPEED 
+            player_pos.y -= movement_speed 
 
         if movement_direction == pygame.K_s:
 
-            player_pos.y += MOVEMENT_SPEED 
+            player_pos.y += movement_speed 
 
         if movement_direction == pygame.K_a:
 
-            player_pos.x -= MOVEMENT_SPEED 
+            player_pos.x -= movement_speed 
 
         if movement_direction == pygame.K_d:
 
-            player_pos.x += MOVEMENT_SPEED 
+            player_pos.x += movement_speed 
 
         detectCircleCollision(rand_pos, player_pos)
+
+        player_prev_pos = pygame.Vector2(player_pos)
         
         pygame.display.flip()
 
-        dt = clock.tick(60) / 1000
+        clock.tick(60) / 1000
 
 
     pygame.quit()
@@ -122,9 +133,24 @@ def detectCircleCollision(rand_pos : pygame.Vector2, player_pos: pygame.Vector2)
         pygame.event.post(pygame.event.Event(COLLISION)) 
 
 
-def moveBody(chain) -> None:
-    for vector in range(len(chain)):
-        pygame.draw.circle(screen, "red", chain[vector], DEFAULT_CIRCLE_RADIUS)
+def moveBody(chain, player_prev_pos ) -> None:
+
+    if len(chain) > 0:
+
+        first_segment = chain[0]
+        first_segment_prev_pos = first_segment["current_position"]
+        first_segment["previous_position"] = first_segment_prev_pos
+        first_segment["current_position"] = pygame.Vector2(player_prev_pos)
+
+        for i in range(1, len(chain)):
+            current_segment = chain[i]
+            prev_segment = chain[i - 1]
+            current_segment_prev_pos = current_segment["current_position"]
+            current_segment["previous_position"] = current_segment_prev_pos
+            current_segment["current_position"] = prev_segment["previous_position"]
+
+    for segment in chain:
+        pygame.draw.circle(screen, "red", segment["current_position"], DEFAULT_CIRCLE_RADIUS)
     
 
 def gameCounter(chain, font) -> None:
@@ -134,4 +160,11 @@ def gameCounter(chain, font) -> None:
     screen.blit(label, (50,50))
     
 
-main()
+if __name__ == "__main__":
+    main()
+
+#
+#  nodes= [node1 : {currPos : pygame.Vector2(x,y), prevPos: pygame.Vector2(x,y)}, node2}
+#  for each node in nodes ...
+#   set current position of node2 to the previous position of node 1...repear
+#
