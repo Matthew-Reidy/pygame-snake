@@ -19,7 +19,7 @@ GAME_OUTCOME = pygame.USEREVENT + 2
 
 DEFAULT_CIRCLE_RADIUS = 10
 
-MOVEMENT_SPEED = 100
+MOVEMENT_SPEED = 1
 
 def main() -> None:
 
@@ -31,6 +31,8 @@ def main() -> None:
 
     rand_pos = RandPos(player_pos)
 
+    movement_direction = pygame.K_w
+
     chain = []
 
     while running:
@@ -38,6 +40,7 @@ def main() -> None:
         screen.fill("black")
 
         gameCounter(chain, myfont)
+
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -51,9 +54,14 @@ def main() -> None:
 
                 else:
                     chain.append(pygame.Vector2(chain[len(chain) - 1 ].x, chain[len(chain) - 1 ].y + 20))
-                    print(chain)
+
             if event.type == GAME_OUTCOME:
                 running = False
+
+            if event.type == pygame.KEYDOWN:
+                movement_direction = event.key
+               
+
 
         #food node
         pygame.draw.circle(screen, "blue", rand_pos, DEFAULT_CIRCLE_RADIUS)
@@ -62,22 +70,22 @@ def main() -> None:
         
         moveBody(chain)
 
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_w]:
+    
+        if movement_direction == pygame.K_w:
 
-            player_pos.y -= MOVEMENT_SPEED * dt
+            player_pos.y -= MOVEMENT_SPEED 
 
-        if keys[pygame.K_s]:
+        if movement_direction == pygame.K_s:
 
-            player_pos.y += MOVEMENT_SPEED * dt
+            player_pos.y += MOVEMENT_SPEED 
 
-        if keys[pygame.K_a]:
+        if movement_direction == pygame.K_a:
 
-            player_pos.x -= MOVEMENT_SPEED * dt
+            player_pos.x -= MOVEMENT_SPEED 
 
-        if keys[pygame.K_d]:
+        if movement_direction == pygame.K_d:
 
-            player_pos.x += MOVEMENT_SPEED * dt
+            player_pos.x += MOVEMENT_SPEED 
 
         detectCircleCollision(rand_pos, player_pos)
         
